@@ -1,11 +1,14 @@
 package com.epam.jmp.redislab.api;
 
 import com.epam.jmp.redislab.utils.RateLimitResponseStats;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpResponse;
+import org.springframework.web.client.DefaultResponseErrorHandler;
 import org.springframework.web.client.RestTemplate;
 import org.testcontainers.containers.DockerComposeContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
@@ -16,7 +19,9 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashSet;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest(webEnvironment =  SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -31,6 +36,14 @@ class FixedWindowRateLimitControllerTest {
     private final static String IMPORTANT_CUSTOMER_ID = "ImportantCustomerId";
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @BeforeEach
+    void init() {
+        restTemplate.setErrorHandler(new DefaultResponseErrorHandler() {
+            public void handleError(ClientHttpResponse response) {
+            }
+        });
+    }
 
     @Value("http://localhost:${local.server.port}/api/v1/ratelimit/fixedwindow")
     private String apiUrl;
@@ -94,7 +107,7 @@ class FixedWindowRateLimitControllerTest {
     // 1 request for 192.168.100.150 per HOUR
     // You can temporary disable this test with @Disabled as this test requires for 3 mins of wall clock time to check.
     @Test
-    // @Disabled
+    @Disabled
     public void testPerHourRateLimit() throws InterruptedException {
         RateLimitResponseStats stats = this.sendRatelimitRequests(3, 60 * 1000,
                 RequestDescriptor.of(null, "192.168.100.150", null));
